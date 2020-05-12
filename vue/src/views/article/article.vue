@@ -21,9 +21,11 @@
           <span>{{scope.row.createTime}}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="管理" width="200" v-if="hasPerm('article:update')">
+      <el-table-column align="center" label="管理" width="250" v-if="hasPerm('article:update')">
         <template slot-scope="scope">
-          <el-button type="primary" icon="edit" @click="showUpdate(scope.$index)">修改</el-button>
+          <el-button type="primary" size="mini" icon="edit" @click="showUpdate(scope.$index)">修改</el-button>
+          <el-button type="primary" size="mini" icon="edit" @click="showAddComment(scope.row.id)">评论</el-button>
+          <el-button type="primary" size="mini" icon="edit" @click="showDesc(scope.row.id)">详情</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -50,9 +52,23 @@
         <el-button type="primary" v-else @click="updateArticle">修 改</el-button>
       </div>
     </el-dialog>
+    <el-dialog title="添加评论" :visible.sync="dialogCommentVisible">
+      <el-form class="small-space" :model="comment" label-position="left" label-width="80px"
+               style='width: 300px; margin-left:50px;'>
+        <el-form-item label="评论内容">
+          <el-input type="text" v-model="comment.content">
+          </el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogCommentVisible = false">取 消</el-button>
+        <el-button type="success" @click="createComment">添加</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 <script>
+  import {mapGetters} from 'vuex'
   export default {
     data() {
       return {
@@ -73,8 +89,19 @@
         tempArticle: {
           id: "",
           content: ""
-        }
+        },
+        comment:{
+          uid:'',
+          aid:'',
+          content:''
+        },
+        dialogCommentVisible:false
       }
+    },
+    computed: {
+      ...mapGetters([
+        'userId'
+      ])
     },
     created() {
       this.getList();
@@ -131,7 +158,31 @@
           data: this.tempArticle
         }).then(() => {
           this.getList();
-          this.dialogFormVisible = false
+          this.dialogCommentVisible = false
+        })
+      },
+      showDesc(id){
+        this.api({
+          url: "/article/articleDesc",
+          method: "post",
+          data: {id}
+        }).then((res) => {
+          console.log(res)
+        })
+      },
+      showAddComment(id){
+        this.comment.aid=id
+        this.dialogCommentVisible = true
+      },
+      createComment(){
+        this.comment.uid=this.userId
+        this.api({
+          url: "/comment/addComment",
+          method: "post",
+          data: this.comment
+        }).then((res) => {
+          // this.getList();
+          this.dialogCommentVisible = false
         })
       },
       updateArticle() {
